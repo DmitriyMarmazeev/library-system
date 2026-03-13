@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine
 from app.core.config import settings
+from app.core.database import engine, Base
+from app.modules.auth.models import User, Role
 
-# from app.modules.auth.router import router as auth_router
+from app.modules.auth.router import router as auth_router
 # from app.modules.users.router import router as users_router
 # from app.modules.books.router import router as books_router
 # from app.modules.copies.router import router as copies_router
@@ -23,7 +25,7 @@ app.add_middleware(
     allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
-# app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 # app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 # app.include_router(books_router, prefix="/api/v1/books", tags=["Books"])
 # app.include_router(copies_router, prefix="/api/v1/copies", tags=["Copies"])
@@ -40,3 +42,8 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.on_event("startup")
+async def startup():
+    # Создаем таблицы (только для разработки!)
+    Base.metadata.create_all(bind=engine)
