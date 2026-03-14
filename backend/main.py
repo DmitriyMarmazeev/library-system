@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import engine
 from app.core.config import settings
-from app.core.database import engine, Base
-from app.modules.auth.models import User, Role
 
 from app.modules.auth.router import router as auth_router
 # from app.modules.users.router import router as users_router
@@ -42,8 +39,3 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-@app.on_event("startup")
-async def startup():
-    # Создаем таблицы (только для разработки!)
-    Base.metadata.create_all(bind=engine)
