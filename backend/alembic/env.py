@@ -12,7 +12,7 @@ load_dotenv()
 
 # Импортируем все модели для автогенерации
 from app.core.database import Base
-from app.modules.auth.models import User, Role
+from app.modules.users.models import User, Role
 from app.modules.books.models import Book, Author, Genre
 from app.modules.copies.models import Copy
 from app.modules.loans.models import Loan

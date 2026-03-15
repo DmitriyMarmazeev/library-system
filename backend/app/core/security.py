@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -16,7 +16,7 @@ pwd_context = CryptContext(
     bcrypt__rounds=12,
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+security = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password"""
@@ -62,7 +62,7 @@ def create_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
     """Get current user from JWT token"""
@@ -71,6 +71,8 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    token = credentials.credentials
     
     try:
         payload = jwt.decode(
@@ -94,6 +96,17 @@ async def get_current_user(
         raise credentials_exception
     
     return user
+
+async def get_current_active_user(
+    current_user = Depends(get_current_user)
+):
+    """Get current active user"""
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
+    return current_user
 
 def require_roles(allowed_roles: List[str]):
     """
