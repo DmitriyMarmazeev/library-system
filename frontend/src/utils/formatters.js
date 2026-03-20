@@ -33,7 +33,7 @@ export const formatDaysRemaining = (dueDate) => {
   return `Просрочено на ${Math.abs(days)} дн.`
 }
 
-export const formatFullName = (user) => {
+export const formatFullName = (user) => { // Переименовано с getDisplayName на formatFullName
   if (!user) return ''
   const { last_name, first_name, middle_name } = user
   return [last_name, first_name, middle_name].filter(Boolean).join(' ')
