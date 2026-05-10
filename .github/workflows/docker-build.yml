@@ -1,6 +1,5 @@
 name: Build and Push Docker Images
 
-# Запуск при пуше в ветку main (или любую другую, которую вы укажете)
 on:
   push:
     branches:
@@ -11,8 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Определяем два сервиса: backend и frontend
         service: [backend, frontend]
+      fail-fast: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,15 +27,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
-          # Контекст — корень репозитория, чтобы были доступны общие файлы
           context: ./${{ matrix.service }}
-          # Путь к Dockerfile относительно корня (./backend/Dockerfile или ./frontend/Dockerfile)
           file: ./${{ matrix.service }}/Dockerfile
           push: true
-          # Теги: latest и короткий SHA коммита для версионирования
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
-          # Кэширование слоёв для ускорения сборки
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
