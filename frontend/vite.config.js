@@ -12,6 +12,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    allowedHosts: ['frontend-latest-h3po.onrender.com', '.onrender.com'],
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:8000/api/v1',
