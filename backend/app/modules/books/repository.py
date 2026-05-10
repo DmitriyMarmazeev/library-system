@@ -17,6 +17,14 @@ class BookRepository:
     def __init__(self, db: Session):
         self.db = db
     
+    def sanitize_search_query(query: str) -> str:
+        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
+        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
+        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
+        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
+        # Обрезаем до 200 символов
+        return sanitized[:200]
+    
     # Book methods
     def get_by_id(self, book_id: int) -> Optional[Book]:
         return self.db.query(Book).filter(Book.id == book_id).first()
@@ -114,6 +122,14 @@ class AuthorRepository:
     def __init__(self, db: Session):
         self.db = db
     
+    def sanitize_search_query(query: str) -> str:
+        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
+        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
+        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
+        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
+        # Обрезаем до 200 символов
+        return sanitized[:200]
+    
     def get_by_id(self, author_id: int) -> Optional[Author]:
         return self.db.query(Author).filter(Author.id == author_id, Author.is_deleted == False).first()
     
@@ -171,6 +187,14 @@ class AuthorRepository:
 class GenreRepository:
     def __init__(self, db: Session):
         self.db = db
+
+    def sanitize_search_query(query: str) -> str:
+        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
+        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
+        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
+        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
+        # Обрезаем до 200 символов
+        return sanitized[:200]
     
     def get_by_id(self, genre_id: int) -> Optional[Genre]:
         return self.db.query(Genre).filter(Genre.id == genre_id, Genre.is_deleted == False).first()
