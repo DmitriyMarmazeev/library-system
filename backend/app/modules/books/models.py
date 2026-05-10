@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Table, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -41,6 +41,7 @@ class Author(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     middle_name = Column(String(100), nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     
     # Relationships
     books = relationship("Book", secondary=book_authors, back_populates="authors")
@@ -50,6 +51,7 @@ class Genre(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), unique=True, nullable=False)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     
     # Relationships
     books = relationship("Book", secondary=book_genres, back_populates="genres")
