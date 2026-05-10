@@ -30,7 +30,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           # Контекст — корень репозитория, чтобы были доступны общие файлы
-          context: .
+          context: ./${{ matrix.service }}
           # Путь к Dockerfile относительно корня (./backend/Dockerfile или ./frontend/Dockerfile)
           file: ./${{ matrix.service }}/Dockerfile
           push: true
