@@ -35,3 +35,23 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy-to-render:
+    needs: build-and-push
+    if: success()
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, frontend]
+        include:
+          - service: backend
+            hook_url_secret: RENDER_BACKEND_DEPLOY_HOOK_URL
+          - service: frontend
+            hook_url_secret: RENDER_FRONTEND_DEPLOY_HOOK_URL
+      fail-fast: false
+    
+    steps:
+      - name: Trigger Render deploy for ${{ matrix.service }}
+        run: |
+          echo "Triggering deployment for ${{ matrix.service }}..."
+          curl -X POST "${{ secrets[matrix.hook_url_secret] }}"
+          echo "Deploy triggered successfully!"
