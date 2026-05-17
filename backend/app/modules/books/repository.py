@@ -3,27 +3,10 @@ from sqlalchemy import or_, and_
 from typing import Optional, List
 from app.modules.books.models import Book, Author, Genre, book_authors, book_genres
 from app.modules.copies.models import Copy, CopyStatus
-import re
-
-def sanitize_search_query(query: str) -> str:
-        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
-        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
-        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
-        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
-        # Обрезаем до 200 символов
-        return sanitized[:200]
 
 class BookRepository:
     def __init__(self, db: Session):
         self.db = db
-    
-    def sanitize_search_query(query: str) -> str:
-        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
-        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
-        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
-        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
-        # Обрезаем до 200 символов
-        return sanitized[:200]
     
     # Book methods
     def get_by_id(self, book_id: int) -> Optional[Book]:
@@ -75,14 +58,10 @@ class BookRepository:
         query = self.db.query(Book).distinct()
         
         if params.get('title'):
-            safe_q = sanitize_search_query(params['title'])
-            search_term = f"%{safe_q}%"
-            query = query.filter(Book.title.ilike(search_term))
+            query = query.filter(Book.title.ilike(f"%{params['title']}%"))
         
         if params.get('isbn'):
-            safe_q = sanitize_search_query(params['isbn'])
-            search_term = f"%{safe_q}%"
-            query = query.filter(Book.isbn.ilike(search_term))
+            query = query.filter(Book.isbn.ilike(f"%{params['isbn']}%"))
         
         if params.get('year_from'):
             query = query.filter(Book.publication_year >= params['year_from'])
@@ -91,20 +70,16 @@ class BookRepository:
             query = query.filter(Book.publication_year <= params['year_to'])
         
         if params.get('author'):
-            safe_q = sanitize_search_query(params['author'])
-            search_term = f"%{safe_q}%"
             query = query.join(book_authors).join(Author).filter(
                 or_(
-                    Author.first_name.ilike(search_term),
-                    Author.last_name.ilike(search_term)
+                    Author.first_name.ilike(f"%{params['author']}%"),
+                    Author.last_name.ilike(f"%{params['author']}%")
                 )
             )
         
         if params.get('genre'):
-            safe_q = sanitize_search_query(params['genre'])
-            search_term = f"%{safe_q}%"
             query = query.join(book_genres).join(Genre).filter(
-                Genre.name.ilike(search_term)
+                Genre.name.ilike(f"%{params['genre']}%")
             )
         
         return query.offset(skip).limit(limit).all()
@@ -122,16 +97,8 @@ class AuthorRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def sanitize_search_query(query: str) -> str:
-        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
-        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
-        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
-        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
-        # Обрезаем до 200 символов
-        return sanitized[:200]
-    
     def get_by_id(self, author_id: int) -> Optional[Author]:
-        return self.db.query(Author).filter(Author.id == author_id, Author.is_deleted == False).first()
+        return self.db.query(Author).filter(Author.id == author_id).first()
     
     def get_by_name(self, first_name: str, last_name: str) -> Optional[Author]:
         return self.db.query(Author)\
@@ -140,7 +107,7 @@ class AuthorRepository:
             .first()
     
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Author]:
-        return self.db.query(Author).filter(Author.is_deleted == False).offset(skip).limit(limit).all()
+        return self.db.query(Author).offset(skip).limit(limit).all()
     
     def create(self, author_data: dict) -> Author:
         author = Author(**author_data)
@@ -162,16 +129,14 @@ class AuthorRepository:
     def delete(self, author_id: int) -> bool:
         author = self.get_by_id(author_id)
         if author:
-            author.is_deleted = True
             self.db.delete(author)
             self.db.commit()
             return True
         return False
     
     def search(self, query: str) -> List[Author]:
-        safe_q = sanitize_search_query(query)
-        search_term = f"%{safe_q}%"
-        return self.db.query(Author).filter(Author.is_deleted == False,
+        search_term = f"%{query}%"
+        return self.db.query(Author).filter(
             or_(
                 Author.first_name.ilike(search_term),
                 Author.last_name.ilike(search_term)
@@ -187,23 +152,15 @@ class AuthorRepository:
 class GenreRepository:
     def __init__(self, db: Session):
         self.db = db
-
-    def sanitize_search_query(query: str) -> str:
-        # Удаляем управляющие символы (0x00-0x1F, 0x7F-0x9F)
-        sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', query)
-        # Экранируем символы `%` и `_`, чтобы не нарушить LIKE
-        sanitized = sanitized.replace('%', '\\%').replace('_', '\\_')
-        # Обрезаем до 200 символов
-        return sanitized[:200]
     
     def get_by_id(self, genre_id: int) -> Optional[Genre]:
-        return self.db.query(Genre).filter(Genre.id == genre_id, Genre.is_deleted == False).first()
+        return self.db.query(Genre).filter(Genre.id == genre_id).first()
     
     def get_by_name(self, name: str) -> Optional[Genre]:
         return self.db.query(Genre).filter(Genre.name == name).first()
     
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Genre]:
-        return self.db.query(Genre).filter(Genre.is_deleted == False).offset(skip).limit(limit).all()
+        return self.db.query(Genre).offset(skip).limit(limit).all()
     
     def create(self, genre_data: dict) -> Genre:
         genre = Genre(**genre_data)
@@ -225,16 +182,14 @@ class GenreRepository:
     def delete(self, genre_id: int) -> bool:
         genre = self.get_by_id(genre_id)
         if genre:
-            Genre.is_deleted = True
             self.db.delete(genre)
             self.db.commit()
             return True
         return False
     
     def search(self, query: str) -> List[Genre]:
-        safe_q = sanitize_search_query(query)
-        search_term = f"%{safe_q}%"
-        return self.db.query(Genre).filter(Genre.is_deleted == False,
+        search_term = f"%{query}%"
+        return self.db.query(Genre).filter(
             Genre.name.ilike(search_term)
         ).limit(20).all()
     
